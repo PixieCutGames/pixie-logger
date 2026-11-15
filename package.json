@@ -1,0 +1,19 @@
+{
+  "name": "pixie-logger",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Lightweight logging service for personal apps",
+  "type": "module",
+  "scripts": {},
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devEngines": {
+    "packageManager": {
+      "name": "pnpm",
+      "version": "12.21.0",
+      "onFail": "download"
+    }
+  },
+  "packageManager": "pnpm@12.21.0"
+}
