@@ -6,7 +6,8 @@
   "type": "module",
   "scripts": {
     "test": "pnpm -r --if-present test",
-    "typecheck": "pnpm -r --if-present typecheck"
+    "typecheck": "pnpm -r --if-present typecheck",
+    "keys": "pnpm --filter @pixie-logger/api keys"
   },
   "keywords": [],
   "author": "",
