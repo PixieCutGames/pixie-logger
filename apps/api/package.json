@@ -7,6 +7,7 @@
 		"cf-typegen": "wrangler types --env-interface CloudflareBindings"
 	},
 	"dependencies": {
+		"@pixie-logger/shared": "workspace:*",
 		"hono": "^4.13.16"
 	},
 	"devDependencies": {

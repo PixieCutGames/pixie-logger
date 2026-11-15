@@ -4,7 +4,10 @@
   "private": true,
   "description": "Lightweight logging service for personal apps",
   "type": "module",
-  "scripts": {},
+  "scripts": {
+    "test": "pnpm -r --if-present test",
+    "typecheck": "pnpm -r --if-present typecheck"
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
