@@ -24,6 +24,7 @@ export const ERROR_CODES = [
   'unauthorized',
   'payload_too_large',
   'rate_limited',
+  'internal_error',
 ] as const;
 
 export type ErrorCode = (typeof ERROR_CODES)[number];
