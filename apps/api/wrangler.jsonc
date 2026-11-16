@@ -21,7 +21,7 @@
 			"database_name": "pixie-logs",
 			"database_id": "4759031c-d6bf-458f-8830-6e6e8ae4391c"
 		}
-	]
+	],
 	/**
 	 * Smart Placement
 	 * https://developers.cloudflare.com/workers/configuration/smart-placement/#smart-placement
@@ -39,7 +39,9 @@
 	 * Note: Use secrets to store sensitive data.
 	 * https://developers.cloudflare.com/workers/configuration/secrets/
 	 */
-	// "vars": {  "MY_VARIABLE": "production_value" }
+	"vars": {
+		"ALLOWED_ORIGINS": "capacitor://localhost,https://localhost,http://localhost,http://localhost:8100,http://localhost:4200,http://localhost:5173"
+	},
 	/**
 	 * Service Bindings (communicate between multiple Workers)
 	 * https://developers.cloudflare.com/workers/wrangler/configuration/#service-bindings

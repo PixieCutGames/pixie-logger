@@ -10,8 +10,11 @@ import {
 import type { ErrorResponse, IngestResponse } from '@pixie-logger/shared';
 import { findAppIdForKey } from '../lib/auth';
 import { INSERT_LOG_SQL, LOG_COLUMNS, toLogRow } from '../lib/log-rows';
+import { logsCors } from '../lib/cors';
 
 export const ingest = new Hono<{ Bindings: CloudflareBindings }>();
+
+ingest.use('*', logsCors());
 
 const tooLarge = (): ErrorResponse =>
 	errorResponse('payload_too_large', `Body exceeds ${LIMITS.maxBodyBytes} bytes`);
