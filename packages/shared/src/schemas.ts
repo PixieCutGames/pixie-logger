@@ -1,8 +1,6 @@
 import { z } from 'zod';
-import { LIMITS, LOG_LEVELS, PLATFORMS } from './constants';
+import { EVENT_NAME_PATTERN, LIMITS, LOG_LEVELS, PLATFORMS } from './constants';
 import { utf8ByteLength } from './utf8';
-
-export const EVENT_NAME_PATTERN = /^[a-z0-9][a-z0-9_.:-]*$/;
 
 export const logLevelSchema = z.enum(LOG_LEVELS);
 export const platformSchema = z.enum(PLATFORMS);
