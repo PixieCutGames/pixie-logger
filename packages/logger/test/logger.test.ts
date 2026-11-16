@@ -549,3 +549,108 @@ describe('review fixes (task 1b)', () => {
     expect(t.names()).toEqual([['ok']]);
   });
 });
+
+describe('retry with backoff (task 2)', () => {
+  // Clock that follows the fake timers, so `retryAt` expires as time advances.
+  function makeTimed(options: Partial<LoggerOptions>, transport: Transport): Logger {
+    const logger = createLogger(
+      { ...BASE, ...options },
+      { transport, now: () => Date.now(), random: () => 0.5 },
+    );
+    loggers.push(logger);
+    return logger;
+  }
+
+  it('interval and error-level flushes do not send during backoff; the retry timer does', async () => {
+    const t = fakeTransport((_b, i) => (i === 0 ? { outcome: 'retry' } : { outcome: 'sent', rejected: 0 }));
+    const logger = makeTimed({ flushIntervalMs: 1000, debug: true }, t.transport);
+    logger.info('a');
+    await logger.flush();
+    expect(t.calls).toHaveLength(1);
+    expect(warnSpy).toHaveBeenCalledWith('[pixie-logger]', 'send failed, retrying in 5s');
+
+    logger.error('b'); // size/level trigger: skipped while backing off
+    await vi.advanceTimersByTimeAsync(4999); // four interval ticks
+    expect(t.calls).toHaveLength(1);
+
+    await vi.advanceTimersByTimeAsync(1);
+    expect(t.names()).toEqual([['a'], ['a', 'b']]);
+  });
+
+  it('the retry timer sends even when the interval is long', async () => {
+    const t = fakeTransport((_b, i) => (i === 0 ? { outcome: 'retry' } : { outcome: 'sent', rejected: 0 }));
+    const logger = makeTimed({ flushIntervalMs: 600_000 }, t.transport);
+    logger.info('a');
+    await logger.flush();
+    await vi.advanceTimersByTimeAsync(4999);
+    expect(t.calls).toHaveLength(1);
+    await vi.advanceTimersByTimeAsync(1);
+    expect(t.calls).toHaveLength(2);
+  });
+
+  it('uses retryAfterMs instead of the backoff delay', async () => {
+    const t = fakeTransport((_b, i) =>
+      i === 0 ? { outcome: 'retry', retryAfterMs: 30_000 } : { outcome: 'sent', rejected: 0 },
+    );
+    const logger = makeTimed({ flushIntervalMs: 1000 }, t.transport);
+    logger.info('a');
+    await logger.flush();
+    await vi.advanceTimersByTimeAsync(29_999);
+    expect(t.calls).toHaveLength(1);
+    await vi.advanceTimersByTimeAsync(1);
+    expect(t.calls).toHaveLength(2);
+  });
+
+  it('a success after retries resets the delay to 5 s', async () => {
+    const t = fakeTransport((_b, i) => (i === 2 ? { outcome: 'sent', rejected: 0 } : { outcome: 'retry' }));
+    const logger = makeTimed({ flushIntervalMs: 600_000 }, t.transport);
+    logger.info('a');
+    await logger.flush(); // fail #1 → 5 s
+    await vi.advanceTimersByTimeAsync(5000); // fail #2 → 10 s
+    expect(t.calls).toHaveLength(2);
+    await vi.advanceTimersByTimeAsync(9999);
+    expect(t.calls).toHaveLength(2);
+    await vi.advanceTimersByTimeAsync(1); // success
+    expect(t.calls).toHaveLength(3);
+
+    logger.info('b');
+    await logger.flush(); // fail → back to 5 s
+    expect(t.calls).toHaveLength(4);
+    await vi.advanceTimersByTimeAsync(4999);
+    expect(t.calls).toHaveLength(4);
+    await vi.advanceTimersByTimeAsync(1);
+    expect(t.calls).toHaveLength(5);
+  });
+
+  it('flush() and a background flush send immediately during backoff', async () => {
+    let handlers: LifecycleHandlers | null = null;
+    const lifecycle: LifecycleAdapter = {
+      subscribe: (h) => {
+        handlers = h;
+        return () => {};
+      },
+    };
+    const t = fakeTransport(() => ({ outcome: 'retry' }));
+    const logger = makeTimed({ flushIntervalMs: 600_000, lifecycle }, t.transport);
+    logger.info('a');
+    await logger.flush();
+    expect(t.calls).toHaveLength(1);
+
+    await logger.flush();
+    expect(t.calls).toHaveLength(2);
+
+    handlers!.onBackground();
+    await vi.advanceTimersByTimeAsync(0);
+    expect(t.calls).toHaveLength(3);
+    expect(t.calls[2]!.keepalive).toBe(true);
+  });
+
+  it('shutdown clears the retry timer', async () => {
+    const t = fakeTransport(() => ({ outcome: 'retry' }));
+    const logger = makeTimed({}, t.transport);
+    logger.info('a');
+    await logger.flush();
+    await logger.shutdown();
+    expect(vi.getTimerCount()).toBe(0);
+  });
+});
