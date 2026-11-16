@@ -550,6 +550,76 @@ describe('review fixes (task 1b)', () => {
   });
 });
 
+describe('storage errors (task 3b)', () => {
+  it('a failed startup read turns saving off for the session but still sends events', async () => {
+    const storage: StorageAdapter = {
+      getItem: vi.fn(async () => {
+        throw new Error('read failed');
+      }),
+      setItem: vi.fn(async () => {}),
+      removeItem: vi.fn(async () => {}),
+    };
+    const t = fakeTransport();
+    const logger = make({ storage }, t.transport);
+    await vi.advanceTimersByTimeAsync(0);
+    expect(warnSpy).toHaveBeenCalledTimes(1);
+
+    logger.info('a');
+    await vi.advanceTimersByTimeAsync(1000);
+    logger.info('b');
+    await logger.flush();
+    await vi.advanceTimersByTimeAsync(2000);
+
+    expect(storage.setItem).not.toHaveBeenCalled();
+    expect(t.names().flat()).toEqual(['a', 'b']);
+    expect(warnSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('a failed save deletes the old saved queue so it is not restored again', async () => {
+    const old = { event: { level: 'info', event: 'old_a', clientTs: 'x' }, sessionId: 's', appVersion: '0.9' };
+    const { storage, data } = memoryStorage({ [STORAGE_KEY]: JSON.stringify({ v: 1, items: [old] }) });
+    const t1 = fakeTransport();
+    make({ storage }, t1.transport);
+    await vi.advanceTimersByTimeAsync(0);
+    expect(t1.names()).toEqual([['old_a']]);
+
+    vi.mocked(storage.setItem).mockImplementation(async () => {
+      throw new Error('quota exceeded');
+    });
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(storage.setItem).toHaveBeenCalled();
+    expect(storage.removeItem).toHaveBeenCalledWith(STORAGE_KEY);
+    expect(data.has(STORAGE_KEY)).toBe(false);
+
+    const t2 = fakeTransport();
+    const second = make({ storage }, t2.transport);
+    await vi.advanceTimersByTimeAsync(0);
+    await second.flush();
+    expect(t2.calls).toHaveLength(0);
+  });
+
+  it('a failed save whose cleanup also fails does not throw and warns once', async () => {
+    const storage: StorageAdapter = {
+      getItem: async () => null,
+      setItem: async () => {
+        throw new Error('quota exceeded');
+      },
+      removeItem: vi.fn(async () => {
+        throw new Error('remove failed');
+      }),
+    };
+    const t = fakeTransport(() => ({ outcome: 'retry' }));
+    const logger = make({ storage }, t.transport);
+    logger.info('a');
+    await vi.advanceTimersByTimeAsync(1000);
+    logger.info('b');
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(storage.removeItem).toHaveBeenCalledWith(STORAGE_KEY);
+    expect(warnSpy).toHaveBeenCalledTimes(1);
+    expect(warnSpy.mock.calls[0]![1]).toBe('failed to save queue');
+  });
+});
+
 describe('retry with backoff (task 2)', () => {
   // Clock that follows the fake timers, so `retryAt` expires as time advances.
   function makeTimed(options: Partial<LoggerOptions>, transport: Transport): Logger {
