@@ -1,5 +1,6 @@
 export const LOG_LEVELS = ['debug', 'info', 'warn', 'error', 'fatal'] as const;
 export const PLATFORMS = ['web', 'android', 'ios'] as const;
+export const EVENT_NAME_PATTERN = /^[a-z0-9][a-z0-9_.:-]*$/;
 
 export const LIMITS = {
   maxEventsPerBatch: 50,
