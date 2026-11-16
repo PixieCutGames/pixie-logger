@@ -1,5 +1,6 @@
 import { EVENT_NAME_PATTERN, LIMITS, LOG_LEVELS, PLATFORMS, levelAtLeast, utf8ByteLength } from '@pixie-logger/shared';
 import type { LogBatch, LogLevel } from '@pixie-logger/shared';
+import { createBackoff } from './backoff';
 import { buildEvent } from './event';
 import { makeKeyRedactor } from './sanitize';
 import { randomId } from './session';
@@ -136,6 +137,10 @@ function createLoggerUnsafe(options: LoggerOptions, deps?: LoggerDeps): Logger {
   let stopped = false;
   let flushTimeout: Timeout | null = null;
   let persistTimeout: Timeout | null = null;
+  let flushSoonForce = false;
+  const backoff = createBackoff({ random });
+  let retryAt = 0;
+  let retryTimer: Timeout | null = null;
   let unsubscribeLifecycle: (() => void) | null = null;
 
   function trimQueue(): void {
@@ -146,12 +151,40 @@ function createLoggerUnsafe(options: LoggerOptions, deps?: LoggerDeps): Logger {
     }
   }
 
-  function scheduleFlushSoon(): void {
-    if (flushTimeout !== null || stopped) return;
+  /** `force: true` ignores the retry backoff (startup flush); size/error-triggered flushes respect it. */
+  function scheduleFlushSoon(force: boolean): void {
+    if (stopped) return;
+    if (force) flushSoonForce = true;
+    if (flushTimeout !== null) return;
     flushTimeout = setTimeout(() => {
       flushTimeout = null;
-      void flush();
+      const f = flushSoonForce;
+      flushSoonForce = false;
+      void flush({ force: f });
     }, 0);
+  }
+
+  function clearRetryTimer(): void {
+    if (retryTimer !== null) {
+      clearTimeout(retryTimer);
+      retryTimer = null;
+    }
+  }
+
+  function scheduleRetry(retryAfterMs: number | undefined): void {
+    const delay =
+      typeof retryAfterMs === 'number' && Number.isFinite(retryAfterMs) && retryAfterMs >= 0
+        ? Math.min(retryAfterMs, MAX_TIMER_MS)
+        : backoff.next();
+    retryAt = now() + delay;
+    clearRetryTimer();
+    if (!stopped) {
+      retryTimer = setTimeout(() => {
+        retryTimer = null;
+        void flush({ force: true });
+      }, delay);
+    }
+    warn(`send failed, retrying in ${Math.round(delay / 1000)}s`);
   }
 
   // ---- persistence ----
@@ -241,7 +274,7 @@ function createLoggerUnsafe(options: LoggerOptions, deps?: LoggerDeps): Logger {
     queue = [...restored, ...queue];
     trimQueue();
     schedulePersist();
-    scheduleFlushSoon();
+    scheduleFlushSoon(true);
   }
 
   // ---- sending ----
@@ -284,11 +317,15 @@ function createLoggerUnsafe(options: LoggerOptions, deps?: LoggerDeps): Logger {
 
       switch (result?.outcome) {
         case 'sent':
+          backoff.reset();
+          retryAt = 0;
           removeItems(items);
           schedulePersist();
           if (result.rejected > 0) warn(`server rejected ${result.rejected} of ${items.length} events`);
           continue;
         case 'dropped':
+          backoff.reset();
+          retryAt = 0;
           removeItems(items);
           schedulePersist();
           warn(`dropped a batch of ${items.length} events (HTTP ${result.status})`);
@@ -298,16 +335,25 @@ function createLoggerUnsafe(options: LoggerOptions, deps?: LoggerDeps): Logger {
           alwaysWarn('API key rejected; logging paused for this session');
           return;
         default:
-          // 'retry' (or an unexpected result): keep the batch for the next flush.
+          // 'retry' (or an unexpected result): keep the batch and try again later.
+          scheduleRetry(result?.outcome === 'retry' ? result.retryAfterMs : undefined);
           return;
       }
     }
   }
 
-  function flush(opts?: { keepalive?: boolean }): Promise<void> {
+  /**
+   * `force: false` (interval, batch-size and error-level triggers) skips sending while backing off.
+   * Forced flushes (public flush, lifecycle, retry timer, startup restore, shutdown) ignore the backoff.
+   */
+  function flush(opts: { keepalive?: boolean; force: boolean }): Promise<void> {
     // Recorded before the "already flushing" check, so a call that joins a running flush still counts.
-    if (opts?.keepalive === true) keepaliveRequested = true;
+    if (opts.keepalive === true) keepaliveRequested = true;
     if (flushing) return flushing;
+    if (!opts.force && now() < retryAt) {
+      keepaliveRequested = false;
+      return Promise.resolve();
+    }
     flushing = (async () => {
       try {
         await runFlush();
@@ -333,14 +379,14 @@ function createLoggerUnsafe(options: LoggerOptions, deps?: LoggerDeps): Logger {
       queue.push({ event: result.event, sessionId, appVersion });
       trimQueue();
       schedulePersist();
-      if (queue.length >= batchSize || levelAtLeast(level, 'error')) scheduleFlushSoon();
+      if (queue.length >= batchSize || levelAtLeast(level, 'error')) scheduleFlushSoon(false);
     } catch (err) {
       warn('unexpected error while logging', err);
     }
   }
 
   // ---- startup ----
-  const interval: Interval = setInterval(() => void flush(), flushIntervalMs);
+  const interval: Interval = setInterval(() => void flush({ force: false }), flushIntervalMs);
 
   restoring = restore().catch((err) => warn('failed to restore queue', err));
 
@@ -349,9 +395,9 @@ function createLoggerUnsafe(options: LoggerOptions, deps?: LoggerDeps): Logger {
       unsubscribeLifecycle = options.lifecycle.subscribe({
         onBackground: () => {
           void persistNow();
-          void flush({ keepalive: true });
+          void flush({ keepalive: true, force: true });
         },
-        onForeground: () => void flush(),
+        onForeground: () => void flush({ force: true }),
       });
     } catch (err) {
       warn('failed to subscribe to lifecycle events', err);
@@ -362,6 +408,7 @@ function createLoggerUnsafe(options: LoggerOptions, deps?: LoggerDeps): Logger {
     try {
       stopped = true;
       clearInterval(interval);
+      clearRetryTimer();
       if (flushTimeout !== null) {
         clearTimeout(flushTimeout);
         flushTimeout = null;
@@ -375,7 +422,7 @@ function createLoggerUnsafe(options: LoggerOptions, deps?: LoggerDeps): Logger {
           warn('failed to unsubscribe from lifecycle events', err);
         }
       }
-      await flush();
+      await flush({ force: true });
       await persistNow();
     } catch (err) {
       warn('unexpected error during shutdown', err);
@@ -389,7 +436,7 @@ function createLoggerUnsafe(options: LoggerOptions, deps?: LoggerDeps): Logger {
     error: (event, o) => log('error', event, o),
     fatal: (event, o) => log('fatal', event, o),
     log,
-    flush: () => flush({ keepalive: false }),
+    flush: () => flush({ keepalive: false, force: true }),
     setEnabled: (value: boolean) => {
       enabled = value === true;
     },
