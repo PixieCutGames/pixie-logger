@@ -12,10 +12,11 @@ Contract reference: [Phase 1](../phase-1/README.md). Backend: [Phase 2](../phase
 | 1b | Review fixes for the core logger (9 findings) | [01b-review-fixes.md](01b-review-fixes.md) | [01b-review-fixes.tech.md](01b-review-fixes.tech.md) |
 | 2 | Transport: sending, response handling, retry with backoff | [02-transport.md](02-transport.md) | [02-transport.tech.md](02-transport.tech.md) |
 | 3 | Platform adapters: web, Capacitor, React Native | [03-adapters.md](03-adapters.md) | [03-adapters.tech.md](03-adapters.tech.md) |
+| 3b | Storage and lifecycle fixes (review of Task 3) | [03b-storage-and-lifecycle-fixes.md](03b-storage-and-lifecycle-fixes.md) | [03b-storage-and-lifecycle-fixes.tech.md](03b-storage-and-lifecycle-fixes.tech.md) |
 | 4 | Build & packaging: compiled JS + types, local install | [04-build.md](04-build.md) | [04-build.tech.md](04-build.tech.md) |
 | 5 | Integration test in the Taqa app (local only) | [05-integration.md](05-integration.md) | [05-integration.tech.md](05-integration.tech.md) |
 
-**Implement in this order:** 1 → 1b → 2 → 3 → 4 → 5.
+**Implement in this order:** 1 → 1b → 2 → 3 → 3b → 4 → 5.
 
 To hand a spec to an agent: *"Implement `docs/specs/phase-3/<file>.tech.md` exactly as written. Follow its 'Rules for the agent' section."*
 
@@ -36,6 +37,8 @@ To hand a spec to an agent: *"Implement `docs/specs/phase-3/<file>.tech.md` exac
 - **After a 401, new events are ignored** for the rest of the session (Task 1b); already-queued events stay saved for the next launch.
 - **One "flush soon" timer for startup, batch-size and error flushes** (Task 2). Each request records whether it must ignore the backoff; if any does, the flush does. So an error logged right after launch can't hold back the restored events.
 - **Nothing keeps running after `shutdown()`** (Task 2): no new retry timer is started. A `retryAfterMs` that isn't a valid number falls back to the backoff delay; very large values are capped so the timer can't fire immediately.
+- **Storage adapters pass errors to the logger** (Task 3b) instead of hiding them. Web uses memory only when no storage exists at all.
+- **If the saved queue can't be read at startup, saving is off for that session** (Task 3b), so it is never overwritten. After a failed save, the saved queue is deleted so already-sent events can't come back.
 
 ## Known limitations
 

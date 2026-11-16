@@ -132,6 +132,8 @@ function createLoggerUnsafe(options: LoggerOptions, deps?: LoggerDeps): Logger {
   let flushing: Promise<void> | null = null;
   let keepaliveRequested = false;
   let saveErrorReported = false;
+  /** Set when the saved queue could not be read at startup, so it is never overwritten. */
+  let persistenceOff = false;
   let blocked = false;
   let enabled = options.enabled !== false;
   let stopped = false;
@@ -191,7 +193,7 @@ function createLoggerUnsafe(options: LoggerOptions, deps?: LoggerDeps): Logger {
   let restoring: Promise<void> = Promise.resolve();
 
   async function persistNow(): Promise<void> {
-    if (!storage) return;
+    if (!storage || persistenceOff) return;
     if (persistTimeout !== null) {
       clearTimeout(persistTimeout);
       persistTimeout = null;
@@ -200,6 +202,7 @@ function createLoggerUnsafe(options: LoggerOptions, deps?: LoggerDeps): Logger {
     try {
       // Never overwrite the stored queue before it has been read back.
       await restoring;
+      if (persistenceOff) return;
       serialized = serializeQueue(queue);
     } catch (err) {
       warn('failed to save queue', err);
@@ -213,6 +216,12 @@ function createLoggerUnsafe(options: LoggerOptions, deps?: LoggerDeps): Logger {
       } else {
         saveErrorReported = true;
         alwaysWarn('failed to save queue', err);
+      }
+      // Don't leave an older saved queue behind: it would be restored and re-sent next session.
+      try {
+        await storage.removeItem(STORAGE_KEY);
+      } catch {
+        // ignore
       }
     }
   }
@@ -235,7 +244,7 @@ function createLoggerUnsafe(options: LoggerOptions, deps?: LoggerDeps): Logger {
   }
 
   function schedulePersist(): void {
-    if (!storage || persistTimeout !== null) return;
+    if (!storage || persistenceOff || persistTimeout !== null) return;
     persistTimeout = setTimeout(() => {
       persistTimeout = null;
       void persistNow();
@@ -248,7 +257,8 @@ function createLoggerUnsafe(options: LoggerOptions, deps?: LoggerDeps): Logger {
     try {
       raw = await storage.getItem(STORAGE_KEY);
     } catch (err) {
-      warn('failed to read saved queue', err);
+      persistenceOff = true;
+      alwaysWarn('could not read the saved queue; saving is off for this session so it is not overwritten', err);
       return;
     }
     if (raw === null || raw === undefined) return;

@@ -7,6 +7,10 @@ export interface LogOptions {
   context?: Record<string, unknown>;
 }
 
+/**
+ * Methods may reject when the underlying storage fails; the logger catches every call.
+ * Implementations must not throw synchronously.
+ */
 export interface StorageAdapter {
   getItem(key: string): Promise<string | null>;
   setItem(key: string, value: string): Promise<void>;
