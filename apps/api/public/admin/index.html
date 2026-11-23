@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<meta name="color-scheme" content="light dark">
+		<title>pixie-logger</title>
+		<link rel="stylesheet" href="viewer.css">
+		<script type="module" src="viewer.js"></script>
+	</head>
+	<body>
+		<header>
+			<h1>pixie-logger</h1>
+		</header>
+		<main>
+			<form id="filters" novalidate>
+				<div class="field">
+					<label for="f-app">App</label>
+					<select id="f-app">
+						<option value="">All apps</option>
+					</select>
+				</div>
+				<fieldset id="f-levels">
+					<legend>Level</legend>
+					<label><input type="checkbox" name="level" value="debug"> debug</label>
+					<label><input type="checkbox" name="level" value="info"> info</label>
+					<label><input type="checkbox" name="level" value="warn"> warn</label>
+					<label><input type="checkbox" name="level" value="error"> error</label>
+					<label><input type="checkbox" name="level" value="fatal"> fatal</label>
+				</fieldset>
+				<div class="field">
+					<label for="f-event">Event</label>
+					<input id="f-event" type="text" autocomplete="off" spellcheck="false">
+				</div>
+				<div class="field">
+					<label for="f-session">Session</label>
+					<input id="f-session" type="text" autocomplete="off" spellcheck="false">
+				</div>
+				<div class="field">
+					<label for="f-from">Received from</label>
+					<input type="datetime-local" id="f-from" step="1">
+				</div>
+				<div class="field">
+					<label for="f-to">Received to</label>
+					<input type="datetime-local" id="f-to" step="1">
+				</div>
+				<div class="field">
+					<label for="f-limit">Per page</label>
+					<select id="f-limit">
+						<option value="50">50</option>
+						<option value="100" selected>100</option>
+						<option value="200">200</option>
+						<option value="500">500</option>
+					</select>
+				</div>
+				<div class="actions">
+					<button type="submit">Search</button>
+					<button type="button" id="f-reset">Reset</button>
+				</div>
+			</form>
+
+			<p id="status" role="status" aria-live="polite"></p>
+
+			<div class="table-wrap">
+				<table id="results">
+					<thead>
+						<tr>
+							<th scope="col">Received</th>
+							<th scope="col">App</th>
+							<th scope="col">Level</th>
+							<th scope="col">Event</th>
+							<th scope="col">Message</th>
+							<th scope="col">Platform</th>
+						</tr>
+					</thead>
+					<tbody></tbody>
+				</table>
+			</div>
+
+			<button type="button" id="load-more" hidden>Load more</button>
+		</main>
+	</body>
+</html>
