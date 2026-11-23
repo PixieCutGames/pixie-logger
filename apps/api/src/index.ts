@@ -6,17 +6,13 @@ import { ingest } from "./routes/ingest";
 
 const app = new Hono<{ Bindings: CloudflareBindings }>();
 
-app.get("/message", (c) => {
-  return c.text("Hello Hono!");
-});
-
 app.get("/v1/health", (c) => {
   return c.json({ ok: true, contract: CONTRACT_VERSION });
 });
 
 app.route("/v1/logs", ingest);
 
-// Every /v1/admin/* route requires Cloudflare Access (Phase 4). Routes are added in Task 2.
+// Every /v1/admin/* route requires Cloudflare Access (Phase 4).
 app.use("/v1/admin/*", requireAccess());
 app.route("/v1/admin", admin);
 
