@@ -19,8 +19,8 @@ Part of [Phase 1](README.md). Turns [Task 1](01-event-contract.md) and [Task 2](
 | `ERROR_CODES` | the error codes from Task 2 |
 | `logEventSchema` | zod schema for one event, including the 8 KB size check |
 | `logBatchEnvelopeSchema` | zod schema for the envelope, with `events` as an array of unknown items (so events can be validated one by one) |
-| `logsQuerySchema` | zod schema for the `GET /v1/logs` query params |
-| Types | `LogLevel`, `Platform`, `LogEvent`, `LogBatch`, `IngestResponse`, `ErrorResponse`, `LogsQuery`, `LogRecord`, `LogsPage` — plain TypeScript in `types.ts`, checked against the schemas at compile time (Phase 3 Task 4b) |
+| `logsQuerySchema` | zod schema for the `GET /v1/admin/logs` query params (`session` added in Phase 4) |
+| Types | `LogLevel`, `Platform`, `LogEvent`, `LogBatch`, `IngestResponse`, `ErrorResponse`, `LogsQuery`, `LogRecord`, `LogsPage`, `AppSummary`, `AppsResponse` (Phase 4) — plain TypeScript in `types.ts`, checked against the schemas at compile time (Phase 3 Task 4b) |
 | `levelAtLeast(level, min)` | helper for client-side level filtering |
 
 ## Structure

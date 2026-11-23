@@ -5,6 +5,8 @@
 
 Design reference: [02-api-endpoints.md](02-api-endpoints.md) — the source of truth for every name, status and code below.
 
+> **Phase 4 note:** this spec is kept as it was implemented. The read route is now `GET /v1/admin/logs` (behind Cloudflare Access, no `X-Admin-Key`), with a `session` filter and a `GET /v1/admin/apps` route. Those changes are specified in [Phase 4, Task 2](../phase-4/02-read-api.tech.md).
+
 ## Scope — read carefully
 
 This task adds the **contract code** for the two endpoints to `@pixie-logger/shared`: error codes, the partial-accept validation helper, the read-query schema and the response types.

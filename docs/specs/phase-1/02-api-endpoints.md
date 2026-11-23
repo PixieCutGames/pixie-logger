@@ -1,6 +1,6 @@
 # Task 2: API Endpoints
 
-Part of [Phase 1](README.md). Defines the two endpoints, how requests are validated, and what they return. Uses the event and batch shapes from [Task 1](01-event-contract.md).
+Part of [Phase 1](README.md). Defines the endpoints, how requests are validated, and what they return. Uses the event and batch shapes from [Task 1](01-event-contract.md).
 
 ## `POST /v1/logs` — send a batch
 
@@ -47,23 +47,33 @@ Error codes: `invalid_json`, `invalid_envelope`, `no_valid_events`, `invalid_que
 
 > `internal_error` (500) was added in Phase 2, Task 2. A client should treat it as temporary and retry the batch later.
 
-## `GET /v1/logs` — read logs (admin only)
+## Reading logs (admin only, behind Cloudflare Access)
 
-Headers: `X-Admin-Key: <admin key>` (later also behind Cloudflare Access)
+> **Changed in Phase 4** (see [Phase 4](../phase-4/README.md)): the read route moved from `GET /v1/logs` to `GET /v1/admin/logs`, the planned `X-Admin-Key` header was dropped in favour of Cloudflare Access, a `session` filter was added, and `GET /v1/admin/apps` was added for the viewer. An admin key for scripts may be added in Phase 7.
+
+All `/v1/admin/*` routes are protected twice:
+
+1. **Cloudflare Access** in front of the Worker on the `/admin` and `/v1/admin` paths: you sign in through Access in the browser; requests without a valid Access session never reach the Worker.
+2. **The Worker checks the Access token** (`Cf-Access-Jwt-Assertion` header) on every `/v1/admin/*` request, in case a request reaches it some other way (e.g. a preview URL). Missing or invalid token → `401 unauthorized`.
+
+Read routes are same-origin only (used by the viewer page on the same Worker), so they have no CORS headers. `POST /v1/logs` stays outside Access and keeps using `X-Api-Key`.
+
+### `GET /v1/admin/logs` — search logs
 
 | Query param | Type              | Notes                                 |
 |-------------|-------------------|---------------------------------------|
-| `app`       | string            | app name                              |
+| `app`       | string            | app id, exact match                   |
 | `level`     | level, repeatable | e.g. `?level=error&level=fatal`       |
 | `event`     | string            | exact match                           |
+| `session`   | string            | session id, exact match (1–64 chars)  |
 | `from`      | ISO datetime      | inclusive, by server receive time     |
 | `to`        | ISO datetime      | exclusive                             |
 | `limit`     | number            | default 100, max 500                  |
 | `cursor`    | string            | from the previous page's `nextCursor` |
 
-Results are newest first. Invalid query params → `400` with code `invalid_query`; missing or wrong admin key → `401`.
+Results are newest first. Invalid query params (including a cursor that wasn't returned by the server) → `400` with code `invalid_query`; failed Access check → `401`.
 
-### Response
+#### Response
 
 ```json
 {
@@ -88,7 +98,22 @@ Results are newest first. Invalid query params → `400` with code `invalid_quer
 }
 ```
 
-`nextCursor` is `null` when there are no more results. `receivedAt` is set by the server.
+`nextCursor` is `null` when there are no more results. `receivedAt` is set by the server. Treat `id` and `nextCursor` as opaque strings.
+
+### `GET /v1/admin/apps` — list apps
+
+No query params. Returns every app, including disabled ones (they can still have logs), sorted by id.
+
+```json
+{
+  "items": [
+    { "id": "maslary", "displayName": "Maslary", "disabled": false },
+    { "id": "taqa-local", "displayName": "Taqa (local test)", "disabled": false }
+  ]
+}
+```
+
+Failed Access check → `401`.
 
 ## Tasks
 
