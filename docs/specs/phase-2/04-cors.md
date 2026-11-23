@@ -43,7 +43,7 @@ It stops **websites** from using a key. It doesn't stop scripts or apps, which c
 
 ## Out of scope
 
-- Per-app origins and editing them from an admin page (Phase 6+).
+- Per-app origins and editing them from an admin page (Phase 7).
 - Rate limiting (Phase 5).
 
 ## Tasks

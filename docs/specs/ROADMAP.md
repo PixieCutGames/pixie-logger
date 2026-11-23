@@ -16,10 +16,11 @@ A lightweight logging service for personal apps: a Cloudflare Worker (Hono + D1)
 | 0 | Setup: monorepo, Hono Worker, D1 database | Done |
 | 1 | [Contract](phase-1/README.md): event shape, API, shared package | Done |
 | 2 | [Backend ingest](phase-2/README.md): schema, key CLI, `POST /v1/logs`, simple CORS allowlist | Done |
-| 3 | [Client package](phase-3/README.md): core, transport and retry, platform adapters, build, Taqa integration test | In progress |
+| 3 | [Client package](phase-3/README.md): core, transport and retry, platform adapters, build, Taqa integration test | Done |
 | 4 | Read side: `GET /v1/logs`, simple viewer page, Cloudflare Access | Not started |
-| 5 | Hardening: rate limiting, 30-day cleanup cron, CI deploy from GitHub, multi-tab queue sharing on web | Not started |
-| 6+ | Admin page: everything below | Not started |
+| 5 | Hardening: rate limiting, 30-day cleanup cron, CI deploy from GitHub, multi-tab queue sharing on web, endpoint path check | Not started |
+| 6 | Reuse: publish/tag the logger package with a README (install, init, log); add the logger to a second app to check the API is truly generic | Not started |
+| 7 | [Admin page](#phase-7-admin-page): everything below | Not started |
 
 ## Notes for Phase 3 (client package)
 
@@ -29,9 +30,15 @@ Resolved in the [Phase 3 specs](phase-3/README.md):
 
 ## Notes for Phase 5 (hardening)
 
+- **Endpoint path check (client).** Found in the Taqa test: an `endpoint` without `/v1/logs` (just the Worker's base URL) is accepted silently; requests go to `/`, which has no CORS headers, so the browser shows a confusing CORS error. Options: warn (always, like invalid options) when the endpoint doesn't end in `/v1/logs`, or accept a base URL and append the path. Decide which; changing the option's meaning affects every app's config.
 - **Multi-tab queue sharing (web).** All tabs of a web app save to the same `pixie-logger:queue` key, causing duplicate sends and lost events. Options to weigh: per-tab keys with a claim/hand-over on restore, or the Web Locks API so only one tab sends. See [Phase 3 known limitations](phase-3/README.md#known-limitations).
 
-## Phase 6+: Admin page
+## Notes for Phase 6 (reuse)
+
+- **Publishing:** still undecided between npm and GitHub Releases (Phase 3 decided no npm for now; apps install a packed `.tgz`).
+- **Second app:** add the logger to another app to check the API is truly generic.
+
+## Phase 7: Admin page
 
 Replace the CLI and config-file workflows with an admin UI, served by the same Worker.
 
