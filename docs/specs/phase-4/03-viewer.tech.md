@@ -19,7 +19,10 @@ Design reference: [03-viewer.md](03-viewer.md). API: [../phase-1/02-api-endpoint
 
 ### Modify `apps/api/src/index.ts`
 
-Remove the `GET /message` route. Change nothing else.
+- Remove the `GET /message` route.
+- Change the comment above `app.use("/v1/admin/*", requireAccess())` to: `// Every /v1/admin/* route requires Cloudflare Access (Phase 4).`
+
+Change nothing else.
 
 ### Create `apps/api/public/_headers`
 
