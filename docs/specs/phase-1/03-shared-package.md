@@ -20,7 +20,7 @@ Part of [Phase 1](README.md). Turns [Task 1](01-event-contract.md) and [Task 2](
 | `logEventSchema` | zod schema for one event, including the 8 KB size check |
 | `logBatchEnvelopeSchema` | zod schema for the envelope, with `events` as an array of unknown items (so events can be validated one by one) |
 | `logsQuerySchema` | zod schema for the `GET /v1/logs` query params |
-| Types | `LogLevel`, `Platform`, `LogEvent`, `LogBatch`, `IngestResponse`, `ErrorResponse`, `LogsQuery`, `LogRecord`, `LogsPage` — inferred from the schemas where possible |
+| Types | `LogLevel`, `Platform`, `LogEvent`, `LogBatch`, `IngestResponse`, `ErrorResponse`, `LogsQuery`, `LogRecord`, `LogsPage` — plain TypeScript in `types.ts`, checked against the schemas at compile time (Phase 3 Task 4b) |
 | `levelAtLeast(level, min)` | helper for client-side level filtering |
 
 ## Structure

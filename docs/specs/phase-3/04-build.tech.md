@@ -1,6 +1,8 @@
 # Technical Spec — Phase 3, Task 4: Build and Packaging
 
 > **Prerequisite:** [03-adapters.tech.md](03-adapters.tech.md) is done.
+>
+> **Amended by [Task 4b](04b-build-fixes.tech.md):** the logger builds with TypeScript 6 (TypeScript 7 has no compiler API for `tsup`'s declarations); the five contract types are plain TypeScript in `shared/src/types.ts` and bundled into the declarations; the size budget is 12 KB.
 
 Design reference: [04-build.md](04-build.md).
 
@@ -129,7 +131,7 @@ Plain Node ESM script, no dependencies except `esbuild` and Node built-ins. Exit
 1. Every expected file exists: for `index`, `web`, `capacitor`, `react-native`: `.js`, `.cjs`, `.d.ts`, `.d.cts`.
 2. **No zod:** no file in `dist/` (excluding `.map`) contains the string `zod` (case-sensitive). Report which file if found.
 3. **No platform imports:** no `dist/*.js` / `*.cjs` file contains `@capacitor/`, `react-native'`, `react-native"` or `@react-native-async-storage`.
-4. **Size budget:** minify `dist/index.js` with `esbuild.transform(code, { minify: true })` and require the result ≤ **10 240 bytes**. Print sizes for all four ESM entries (minified bytes, and gzip size via `node:zlib`).
+4. **Size budget:** minify `dist/index.js` with `esbuild.transform(code, { minify: true })` and require the result ≤ **12 288 bytes** (12 KB, raised in Task 4b). Print sizes for all four ESM entries (minified bytes, and gzip size via `node:zlib`).
 5. **Stubs:** each stub `package.json` points at files that exist.
 
 ### Modify root `.gitignore`
@@ -155,8 +157,8 @@ packages/logger/dist/
    ```
    a. ESM: `node --input-type=module -e "import { createLogger } from '@pixie-logger/logger'; import * as w from '@pixie-logger/logger/web'; import * as c from '@pixie-logger/logger/capacitor'; import * as r from '@pixie-logger/logger/react-native'; console.log(typeof createLogger, Object.keys(w), Object.keys(c), Object.keys(r))"`
    b. CJS: `node -e "const { createLogger } = require('@pixie-logger/logger'); const w = require('@pixie-logger/logger/web'); console.log(typeof createLogger, Object.keys(w))"`
-   c. Types, modern resolution: a `test.ts` importing `createLogger` and all three subpaths, type-checked with the repo's TypeScript (`<repo>/node_modules/.bin/tsc` or the logger package's) using `--moduleResolution bundler --module esnext --noEmit --strict`.
-   d. Types, legacy resolution: the same file with `--moduleResolution node --module commonjs` (this exercises the stub folders).
+   c. Types, modern resolution: a `test.ts` importing `createLogger` and all three subpaths, type-checked with the logger package's TypeScript 6 (`<repo>/packages/logger/node_modules/.bin/tsc`) using `--moduleResolution bundler --module esnext --noEmit --strict`.
+   d. Types, legacy resolution: the same file with `--moduleResolution node --module commonjs --ignoreDeprecations 6.0` (this exercises the stub folders; TypeScript 7 removed `node` resolution, so this check uses TypeScript 6).
    e. Runtime smoke: in ESM, create a logger with a fake `fetch` that records calls, log one `info` event, `await logger.flush()`, and print the recorded request body. The body must be a valid batch.
    Then delete the temp dir.
 

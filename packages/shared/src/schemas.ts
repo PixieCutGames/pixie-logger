@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { EVENT_NAME_PATTERN, LIMITS, LOG_LEVELS, PLATFORMS } from './constants';
 import { utf8ByteLength } from './utf8';
+import type { LogLevel, Platform, LogEvent, LogBatchEnvelope } from './types';
 
 export const logLevelSchema = z.enum(LOG_LEVELS);
 export const platformSchema = z.enum(PLATFORMS);
@@ -32,9 +33,14 @@ export const logBatchEnvelopeSchema = z.object({
   events: z.array(z.unknown()).min(1).max(LIMITS.maxEventsPerBatch),
 });
 
-export type LogLevel = z.infer<typeof logLevelSchema>;
-export type Platform = z.infer<typeof platformSchema>;
-export type LogEvent = z.infer<typeof logEventSchema>;
-export type LogBatchEnvelope = z.infer<typeof logBatchEnvelopeSchema>;
-/** What clients send. */
-export type LogBatch = Omit<LogBatchEnvelope, 'events'> & { events: LogEvent[] };
+type Mutual<A, B> = [A] extends [B] ? ([B] extends [A] ? true : false) : false;
+type Expect<T extends true> = T;
+/** Fails to compile if the plain types in ./types drift from the zod schemas. */
+export type ContractTypeChecks = [
+  Expect<Mutual<LogLevel, z.infer<typeof logLevelSchema>>>,
+  Expect<Mutual<LogLevel, (typeof LOG_LEVELS)[number]>>,
+  Expect<Mutual<Platform, z.infer<typeof platformSchema>>>,
+  Expect<Mutual<Platform, (typeof PLATFORMS)[number]>>,
+  Expect<Mutual<LogEvent, z.infer<typeof logEventSchema>>>,
+  Expect<Mutual<LogBatchEnvelope, z.infer<typeof logBatchEnvelopeSchema>>>,
+];

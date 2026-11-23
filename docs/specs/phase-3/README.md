@@ -14,9 +14,10 @@ Contract reference: [Phase 1](../phase-1/README.md). Backend: [Phase 2](../phase
 | 3 | Platform adapters: web, Capacitor, React Native | [03-adapters.md](03-adapters.md) | [03-adapters.tech.md](03-adapters.tech.md) |
 | 3b | Storage and lifecycle fixes (review of Task 3) | [03b-storage-and-lifecycle-fixes.md](03b-storage-and-lifecycle-fixes.md) | [03b-storage-and-lifecycle-fixes.tech.md](03b-storage-and-lifecycle-fixes.tech.md) |
 | 4 | Build & packaging: compiled JS + types, local install | [04-build.md](04-build.md) | [04-build.tech.md](04-build.tech.md) |
+| 4b | Build fixes: TypeScript 6 for the logger, plain contract types, 12 KB budget | [04b-build-fixes.md](04b-build-fixes.md) | [04b-build-fixes.tech.md](04b-build-fixes.tech.md) |
 | 5 | Integration test in the Taqa app (local only) | [05-integration.md](05-integration.md) | [05-integration.tech.md](05-integration.tech.md) |
 
-**Implement in this order:** 1 → 1b → 2 → 3 → 3b → 4 → 5.
+**Implement in this order:** 1 → 1b → 2 → 3 → 3b → 4 + 4b → 5.
 
 To hand a spec to an agent: *"Implement `docs/specs/phase-3/<file>.tech.md` exactly as written. Follow its 'Rules for the agent' section."*
 
@@ -39,6 +40,9 @@ To hand a spec to an agent: *"Implement `docs/specs/phase-3/<file>.tech.md` exac
 - **Nothing keeps running after `shutdown()`** (Task 2): no new retry timer is started. A `retryAfterMs` that isn't a valid number falls back to the backoff delay; very large values are capped so the timer can't fire immediately.
 - **Storage adapters pass errors to the logger** (Task 3b) instead of hiding them. Web uses memory only when no storage exists at all.
 - **If the saved queue can't be read at startup, saving is off for that session** (Task 3b), so it is never overwritten. After a failed save, the saved queue is deleted so already-sent events can't come back.
+- **The logger builds with TypeScript 6** (Task 4b); `shared` and `api` stay on 7. TypeScript 7 (native compiler) has no JavaScript compiler API, which `tsup` needs for declarations. Revisit if 6 becomes a nuisance.
+- **Contract types are plain TypeScript** in `shared/src/types.ts` (Task 4b), not `z.infer`, so the logger's published types don't depend on zod or the shared package. A compile-time check keeps them in line with the zod schemas.
+- **Size budget 12 KB** minified for the core entry (Task 4b), raised from 10 KB to fit features added after it was set, with room for Phase 5.
 
 ## Known limitations
 
@@ -47,7 +51,7 @@ To hand a spec to an agent: *"Implement `docs/specs/phase-3/<file>.tech.md` exac
 ## Goals
 
 - **Never hurts the app:** no thrown errors, no blocking work, no unbounded memory or storage.
-- **Small:** core bundle under 10 KB minified.
+- **Small:** core bundle under 12 KB minified (about 4 KB gzipped).
 - **Same behaviour on every platform;** only storage and lifecycle differ.
 - **Nothing sensitive leaves the device by accident:** common secret and personal fields are redacted automatically.
 

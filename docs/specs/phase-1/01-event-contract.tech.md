@@ -73,11 +73,13 @@ Exports:
 | `platformSchema` | `z.enum(PLATFORMS)` |
 | `logEventSchema` | zod object, see below |
 | `logBatchEnvelopeSchema` | zod object, see below |
-| `type LogLevel` | `z.infer<typeof logLevelSchema>` |
-| `type Platform` | `z.infer<typeof platformSchema>` |
-| `type LogEvent` | `z.infer<typeof logEventSchema>` |
-| `type LogBatchEnvelope` | `z.infer<typeof logBatchEnvelopeSchema>` |
-| `type LogBatch` | `Omit<LogBatchEnvelope, 'events'> & { events: LogEvent[] }` — what clients send |
+| `type LogLevel` | plain union in `types.ts`, checked against `z.infer<typeof logLevelSchema>` |
+| `type Platform` | plain union in `types.ts`, checked against `z.infer<typeof platformSchema>` |
+| `type LogEvent` | plain type alias in `types.ts`, checked against `z.infer<typeof logEventSchema>` |
+| `type LogBatchEnvelope` | plain type alias in `types.ts`, checked against `z.infer<typeof logBatchEnvelopeSchema>` |
+| `type LogBatch` | plain type alias in `types.ts` — what clients send |
+
+*Since Phase 3 Task 4b these types are plain TypeScript (no zod), so the client package's published types don't depend on zod. A compile-time check in `schemas.ts` fails `typecheck` if they drift from the schemas.*
 
 **`logEventSchema`** — a `z.object` (default behaviour: unknown keys are **stripped**, not rejected):
 

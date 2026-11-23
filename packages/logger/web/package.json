@@ -1,0 +1,6 @@
+{
+  "main": "../dist/web.cjs",
+  "module": "../dist/web.js",
+  "types": "../dist/web.d.ts",
+  "sideEffects": false
+}
