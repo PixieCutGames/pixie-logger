@@ -1,0 +1,4 @@
+# Copy to .dev.vars (never committed, never deployed) for local development.
+# Lets /v1/admin/* work under `wrangler dev` without Cloudflare Access.
+# Only honoured for requests to localhost / 127.0.0.1.
+ACCESS_DEV_BYPASS=true

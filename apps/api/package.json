@@ -14,7 +14,8 @@
 	},
 	"dependencies": {
 		"@pixie-logger/shared": "workspace:*",
-		"hono": "^4.13.16"
+		"hono": "^4.13.16",
+		"jose": "^6.2.18"
 	},
 	"devDependencies": {
 		"@types/node": "^26.6.6",
