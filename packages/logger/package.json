@@ -4,22 +4,71 @@
   "private": true,
   "type": "module",
   "sideEffects": false,
-  "main": "./src/index.ts",
-  "types": "./src/index.ts",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
-    ".": "./src/index.ts",
-    "./web": "./src/web.ts",
-    "./capacitor": "./src/capacitor.ts",
-    "./react-native": "./src/react-native.ts"
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    },
+    "./web": {
+      "import": {
+        "types": "./dist/web.d.ts",
+        "default": "./dist/web.js"
+      },
+      "require": {
+        "types": "./dist/web.d.cts",
+        "default": "./dist/web.cjs"
+      }
+    },
+    "./capacitor": {
+      "import": {
+        "types": "./dist/capacitor.d.ts",
+        "default": "./dist/capacitor.js"
+      },
+      "require": {
+        "types": "./dist/capacitor.d.cts",
+        "default": "./dist/capacitor.cjs"
+      }
+    },
+    "./react-native": {
+      "import": {
+        "types": "./dist/react-native.d.ts",
+        "default": "./dist/react-native.js"
+      },
+      "require": {
+        "types": "./dist/react-native.d.cts",
+        "default": "./dist/react-native.cjs"
+      }
+    },
+    "./package.json": "./package.json"
   },
+  "files": [
+    "dist",
+    "web",
+    "capacitor",
+    "react-native"
+  ],
   "scripts": {
+    "build": "tsup",
+    "check:build": "node scripts/check-build.mjs",
+    "pack:local": "pnpm build && pnpm check:build && pnpm pack",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
     "@pixie-logger/shared": "workspace:*",
+    "esbuild": "^0.28.2",
     "jsdom": "^31.0.1",
-    "typescript": "^7.0.2",
+    "tsup": "^9.0.0",
+    "typescript": "^6.0.3",
     "vitest": "^5.1.0"
   }
 }

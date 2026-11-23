@@ -1,0 +1,6 @@
+{
+  "main": "../dist/capacitor.cjs",
+  "module": "../dist/capacitor.js",
+  "types": "../dist/capacitor.d.ts",
+  "sideEffects": false
+}

@@ -13,7 +13,7 @@ Built with `tsup` into `packages/logger/dist/`:
 - **ESM and CommonJS** for each entry point (core, `web`, `capacitor`, `react-native`), so it works with Angular, Vite, Metro and older tooling.
 - **Type definitions** (`.d.ts`) for each entry point, including for projects whose TypeScript settings don't understand package subpaths (common in older Angular projects).
 - **The shared contract is bundled in,** so apps install one package. **zod is not included**; the build fails if it sneaks in.
-- **Size budget:** the core entry under 10 KB minified. The build check fails above that.
+- **Size budget:** the core entry under 12 KB minified (raised from 10 KB in Task 4b). The build check fails above that.
 
 ## Installing in an app
 

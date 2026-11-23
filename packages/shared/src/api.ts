@@ -1,7 +1,7 @@
 import type { ErrorCode } from './constants';
 import { formatZodIssues } from './format';
 import { logEventSchema } from './schemas';
-import type { LogEvent, LogLevel, Platform } from './schemas';
+import type { LogEvent, LogLevel, Platform } from './types';
 
 export interface RejectedEvent {
   index: number;      // position in the request's `events` array
