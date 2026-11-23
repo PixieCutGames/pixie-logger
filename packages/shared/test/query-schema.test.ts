@@ -44,6 +44,16 @@ describe('logsQuerySchema', () => {
     expect(parse({ from: '2026-11-15' }).success).toBe(false);
   });
 
+  it('accepts a session', () => {
+    expect(parse({ session: 'abc' }).data?.session).toBe('abc');
+  });
+
+  it('bounds session length', () => {
+    expect(parse({ session: '' }).success).toBe(false);
+    expect(parse({ session: 'x'.repeat(65) }).success).toBe(false);
+    expect(parse({ session: 'x'.repeat(64) }).success).toBe(true);
+  });
+
   it('strips unknown params', () => {
     const r = parse({ foo: 'bar' });
     expect(r.success).toBe(true);

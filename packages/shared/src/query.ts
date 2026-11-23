@@ -10,6 +10,7 @@ export const logsQuerySchema = z
       .transform((v) => [...new Set(Array.isArray(v) ? v : [v])])
       .optional(),
     event: z.string().min(1).max(LIMITS.eventNameMax).optional(),
+    session: z.string().min(1).max(LIMITS.sessionIdMax).optional(),
     from: z.iso.datetime({ offset: true }).optional(),
     to: z.iso.datetime({ offset: true }).optional(),
     limit: z.coerce

@@ -17,7 +17,7 @@ export interface ErrorResponse {          // any 4xx
   error: { code: ErrorCode; message: string };
 }
 
-export interface LogRecord {              // one item from GET /v1/logs
+export interface LogRecord {              // one item from GET /v1/admin/logs
   id: string;
   app: string;
   level: LogLevel;
@@ -33,9 +33,19 @@ export interface LogRecord {              // one item from GET /v1/logs
   receivedAt: string;  // ISO datetime, set by the server
 }
 
-export interface LogsPage {               // GET /v1/logs → 200
+export interface LogsPage {               // GET /v1/admin/logs → 200
   items: LogRecord[];
   nextCursor: string | null;
+}
+
+export interface AppSummary {             // one item from GET /v1/admin/apps
+  id: string;
+  displayName: string;
+  disabled: boolean;
+}
+
+export interface AppsResponse {           // GET /v1/admin/apps → 200
+  items: AppSummary[];
 }
 
 /** Validates each event independently so one bad event doesn't reject the batch. Never throws. */
