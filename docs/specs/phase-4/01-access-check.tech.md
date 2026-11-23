@@ -76,7 +76,7 @@ export type JwksProvider = (teamDomain: string) => JWTVerifyGetKey;
 #### `normalizeTeamDomain(value: string | undefined): string | null`
 
 - Trim; remove trailing `/` characters.
-- Return `null` if empty, or if it doesn't start with `https://`, or if `new URL(value)` throws, or if the URL has a path other than `/`, a query or a hash.
+- Return `null` if empty, or if it doesn't start with `https://`, or if the string contains `?` or `#` (checked on the string, because `URL` reports a bare trailing `?`/`#` as empty), or if `new URL(value)` throws, or if the URL has a path other than `/`.
 - Otherwise return the normalised value (e.g. `https://team.cloudflareaccess.com`).
 
 #### `remoteJwks: JwksProvider`
@@ -139,7 +139,7 @@ Constants: `TEAM = 'https://team.cloudflareaccess.com'`, `AUD = 'test-aud'`, `en
 
 `normalizeTeamDomain`:
 1. `'https://team.cloudflareaccess.com/'` → `'https://team.cloudflareaccess.com'`; `'  https://team.cloudflareaccess.com  '` → same.
-2. `undefined`, `''`, `'team.cloudflareaccess.com'`, `'http://team.cloudflareaccess.com'`, `'https://team.cloudflareaccess.com/x'` → `null`.
+2. `undefined`, `''`, `'team.cloudflareaccess.com'`, `'http://team.cloudflareaccess.com'`, `'https://team.cloudflareaccess.com/x'`, `'https://team.cloudflareaccess.com?x=1'`, `'https://team.cloudflareaccess.com#x'` → `null`.
 
 `verifyAccessToken`:
 3. Valid token → `{ email: 'me@example.com' }`.
@@ -152,7 +152,7 @@ Constants: `TEAM = 'https://team.cloudflareaccess.com'`, `AUD = 'test-aud'`, `en
 `isDevBypass`:
 9. `('http://localhost:8787/v1/admin/logs', { ACCESS_DEV_BYPASS: 'true' })` → `true`; same with `127.0.0.1` → `true`.
 10. `'https://pixie-logger.x.workers.dev/v1/admin/logs'` with bypass `'true'` → `false`.
-11. localhost with bypass `undefined`, `''`, `'1'`, `'TRUE '`… — only exactly `'true'` after trim counts: `'1'` → `false`, `undefined` → `false`.
+11. localhost with bypass `undefined`, `''`, `'1'`, `'TRUE '`… — only exactly `'true'` after trim counts: `'1'` → `false`, `undefined` → `false`, `' true '` → `true`. An unparseable URL → `false`.
 
 `requireAccess` (build a tiny Hono app in the test: `app.use('/v1/admin/*', requireAccess({ getJwks: () => localJwks }))`, `app.get('/v1/admin/ping', (c) => c.json({ ok: true }))`, `app.get('/v1/health', …)`; call with `app.request(url, init, env)`):
 12. No header → `401`, body `{ error: { code: 'unauthorized', … } }`, `Cache-Control: no-store`.
