@@ -88,7 +88,7 @@ pnpm --filter @pixie-logger/api exec wrangler d1 execute pixie-logs --remote \
 
 - **CORS** (Phase 5). Until then, calls from browsers and Ionic/Capacitor WebViews are blocked by the browser; curl, scripts and React Native work.
 - Rate limiting (Phase 5).
-- Reading logs, `GET /v1/logs` (Phase 4).
+- Reading logs, `GET /v1/admin/logs` (Phase 4).
 - Caching key lookups. One small indexed lookup per batch is cheap at this scale.
 
 ## Tasks

@@ -18,7 +18,7 @@ Create the database structure for apps, their write keys and their logs, as vers
 
 | Column | Type | Notes |
 |---|---|---|
-| `id` | text, primary key | Short slug, e.g. `maslary`. Lowercase letters, digits and `-`, 1–50 chars. This is the `app` value returned by `GET /v1/logs` and used as its filter. Never changes. |
+| `id` | text, primary key | Short slug, e.g. `maslary`. Lowercase letters, digits and `-`, 1–50 chars. This is the `app` value returned by `GET /v1/admin/logs` and used as its filter. Never changes. |
 | `display_name` | text | Human name, e.g. `Maslary (مصاري)` |
 | `created_at` | integer | Unix time in milliseconds |
 | `disabled_at` | integer, nullable | Set to stop accepting logs from the app without deleting anything |

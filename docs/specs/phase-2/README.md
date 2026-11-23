@@ -41,7 +41,7 @@ To hand a spec to an agent: *"Implement `docs/specs/phase-2/<file>.tech.md` exac
 ## Out of scope (later phases)
 
 - Client logger package (Phase 3).
-- `GET /v1/logs`, the viewer page and Cloudflare Access (Phase 4).
+- `GET /v1/admin/logs`, the viewer page and Cloudflare Access (Phase 4).
 - Rate limiting and the 30-day cleanup job (Phase 5).
 - Per-app origins and an admin page (Phase 7, see the [roadmap](../ROADMAP.md)).
 

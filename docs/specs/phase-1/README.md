@@ -5,7 +5,7 @@ Define the single contract every part of pixie-logger depends on. Phase 1 is spl
 | # | File | What it covers |
 |---|------|----------------|
 | 1 | [01-event-contract.md](01-event-contract.md) | Log levels, event shape, batch envelope, app identification |
-| 2 | [02-api-endpoints.md](02-api-endpoints.md) | `POST /v1/logs` and `GET /v1/logs`: requests, validation flow, responses |
+| 2 | [02-api-endpoints.md](02-api-endpoints.md) | `POST /v1/logs` and the read routes (`GET /v1/admin/logs`, `GET /v1/admin/apps`, since Phase 4): requests, validation flow, responses |
 | 3 | [03-shared-package.md](03-shared-package.md) | `@pixie-logger/shared`: zod schemas, types, constants, tests |
 
 Tasks 1 and 2 are design (they define *what*); task 3 is the implementation (it turns them into code).

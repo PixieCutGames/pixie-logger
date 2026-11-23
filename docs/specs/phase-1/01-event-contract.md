@@ -72,7 +72,7 @@ These apply to both the event and the envelope.
 - **Event size** is measured on `JSON.stringify(event)` of the event as received. Whitespace in the request body does not count against it.
 - **Unknown fields** are ignored (stripped) and never stored. A newer app release can add a field without an older server rejecting its logs.
 - **Optional fields** may be omitted, but not sent as `null` (a `null` value makes the event invalid). Omitted fields are stored as `null`. Optional strings may be empty.
-- **`event`** is lowercase. It allows letters, digits and `_ . : -`, and must start with a letter or digit. This keeps names consistent for exact-match filtering in `GET /v1/logs`.
+- **`event`** is lowercase. It allows letters, digits and `_ . : -`, and must start with a letter or digit. This keeps names consistent for exact-match filtering in `GET /v1/admin/logs`.
 - **`params` / `context`** must be JSON objects (not arrays or primitives). Their values can be any JSON. Nesting is only limited by the 8 KB event size.
 - **`clientTs`** is an ISO 8601 datetime with a time zone: either `Z` or an offset such as `+02:00`. It is never rejected for being in the past or future, because device clocks drift. The server records its own `receivedAt` separately.
 
@@ -98,7 +98,7 @@ Read page sizes (`limit` default 100, max 500) are defined in [Task 2](02-api-en
 
 - The app is identified by its API key, sent in the `X-Api-Key` header, **never** by a field in the body. One app can't pretend to be another.
 - Each app has its own **write-only** key. It can send logs, nothing else.
-- Reading logs uses a separate **admin** key (`X-Admin-Key` header; from Phase 4, also Cloudflare Access).
+- Reading logs needs a Cloudflare Access sign-in (`/v1/admin/*` routes, Phase 4). No app key can read logs.
 
 ## Tasks
 
